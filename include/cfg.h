@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #define X_CFG_LIST \
-	X(bool, enable_auth) \
+	X(bool, require_auth) \
 	X(bool, relax_encryption) \
 	X(string, private_key_file) \
 	X(string, certificate_file) \

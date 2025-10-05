@@ -138,7 +138,7 @@ command line option or place it at the default location
 ```
 use_relative_paths=true
 address=0.0.0.0
-enable_auth=true
+require_auth=true
 username=luser
 password=p455w0rd
 private_key_file=tls_key.pem
@@ -163,7 +163,7 @@ You also need to tell wayvnc where this file is located, by setting setting the
 ```
 use_relative_paths=true
 address=0.0.0.0
-enable_auth=true
+require_auth=true
 username=luser
 password=p455w0rd
 rsa_private_key_file=rsa_key.pem
@@ -171,6 +171,27 @@ rsa_private_key_file=rsa_key.pem
 
 You may also add credentials for TLS in combination with RSA. The client will
 choose.
+
+#### VNCAuth
+DES-based authentication does not support encryption and uses weak cryptography
+to protect the password, which is limited to 8 characters. This method does not
+use a username.
+
+To enable VNCAuth, set a password and `relax_encryption`. Do not set
+`enable_pam` and `username`.
+```
+password=p455w0rd
+relax_encryption=true
+```
+
+#### Optional Authentication
+
+Authentication is *enabled* when any of `enable_pam`, `username`, `password` is
+set.
+
+Additionally, authentication is *required* when `require_auth=true` or
+`relax_encryption=false`. Otherwise, authentication is *optional* at client's
+choice.
 
 ### wayvncctl control socket
 
