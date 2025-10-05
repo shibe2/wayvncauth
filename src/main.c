@@ -1101,15 +1101,22 @@ static int init_nvnc(struct wayvnc* self)
 		nvnc_set_desktop_layout_fn(self->nvnc, on_client_resize);
 
 	enum nvnc_auth_flags auth_flags = 0;
-	if (self->cfg.enable_auth) {
+	if (self->cfg.require_auth) {
 		auth_flags |= NVNC_AUTH_REQUIRE_AUTH;
 	}
 	if (!self->cfg.relax_encryption) {
 		auth_flags |= NVNC_AUTH_REQUIRE_ENCRYPTION;
 	}
 
-	if (self->cfg.enable_auth) {
-		if (nvnc_enable_auth(self->nvnc, auth_flags, on_auth, self) < 0) {
+	nvnc_auth_fn auth_fn = NULL;
+#ifdef ENABLE_PAM
+	if (self->cfg.enable_pam)
+		auth_fn = on_auth;
+#endif
+	if (self->cfg.username)
+		auth_fn = on_auth;
+	if (auth_fn || self->cfg.password) {
+		if (nvnc_enable_auth(self->nvnc, auth_flags, auth_fn, self) < 0) {
 			nvnc_log(NVNC_LOG_ERROR, "Failed to enable authentication");
 			goto auth_failure;
 		}
@@ -1138,6 +1145,13 @@ static int init_nvnc(struct wayvnc* self)
 				nvnc_log(NVNC_LOG_ERROR, "Failed to enable TLS authentication");
 				goto auth_failure;
 			}
+		}
+	}
+
+	if (self->cfg.password && self->cfg.relax_encryption && !auth_fn) {
+		if (nvnc_set_password(self->nvnc, self->cfg.password) < 0) {
+			nvnc_log(NVNC_LOG_ERROR, "Failed to set VNCAuth password");
+			goto failure;
 		}
 	}
 
@@ -1396,7 +1410,7 @@ int wayvnc_usage(struct option_parser* parser, FILE* stream, int rc)
 
 int check_cfg_sanity(struct cfg* cfg)
 {
-	if (cfg->enable_auth) {
+	if (cfg->require_auth) {
 		int rc = 0;
 
 		if (!nvnc_has_auth()) {
@@ -1409,13 +1423,13 @@ int check_cfg_sanity(struct cfg* cfg)
 			rc = -1;
 		}
 
-		if (!cfg->username && !cfg->enable_pam) {
-			nvnc_log(NVNC_LOG_ERROR, "Authentication enabled, but missing username");
+		if (!cfg->username && !cfg->enable_pam && !cfg->relax_encryption) {
+			nvnc_log(NVNC_LOG_ERROR, "Authentication required, but missing username");
 			rc = -1;
 		}
 
 		if (!cfg->password && !cfg->enable_pam) {
-			nvnc_log(NVNC_LOG_ERROR, "Authentication enabled, but missing password");
+			nvnc_log(NVNC_LOG_ERROR, "Authentication required, but missing password");
 			rc = -1;
 		}
 
@@ -1424,6 +1438,8 @@ int check_cfg_sanity(struct cfg* cfg)
 		}
 
 		return rc;
+	} else if (cfg->relax_encryption && (cfg->username || cfg->enable_pam || cfg->password)) {
+		nvnc_log(NVNC_LOG_WARNING, "Authentication enabled but not required; clients will be able to bypass authentication");
 	}
 
 	return 0;
