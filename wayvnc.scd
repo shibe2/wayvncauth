@@ -118,13 +118,7 @@ considered to be part of the key or the value.
 	The address to which the server shall bind, e.g. 0.0.0.0 or localhost.
 
 *certificate_file*
-	The path to the certificate file for encryption. Only applicable when
-	*enable_auth*=true.
-
-*enable_auth*
-	Enable authentication and encryption. Setting this value to *true*
-	requires also setting *certificate_file*, *private_key_file*,
-	*username* and *password*.
+	The path to the certificate file for encryption.
 
 *password*
 	Choose a password for authentication.
@@ -133,16 +127,21 @@ considered to be part of the key or the value.
 	The port to which the server shall bind. Default is 5900.
 
 *private_key_file_file*
-	The path to the private key file for TLS encryption. Only applicable
-	when *enable_auth*=true.
+	The path to the private key file for TLS encryption.
 
 *relax_encryption*
 	Don't require encryption after the user has been authenticated. This
-	enables some security types such as Apple Diffie-Hellman.
+	enables some security types such as Apple Diffie-Hellman and VNCAuth.
+
+*require_auth*
+	Require authentication and encryption. Setting this value to *true*
+	requires also specifying other security options such as
+	*certificate_file*, *enable_pam*, *password*, *private_key_file_file*,
+	*username*. When *require_auth=false*, authentication and encryption may
+	still be enabled by other options, but may be bypassed by clients.
 
 *rsa_private_key_file*
-	The path to the private key file for RSA-AES encryption. Only applicable
-	when *enable_auth*=true.
+	The path to the private key file for RSA-AES encryption.
 
 *username*
 	Choose a username for authentication.
@@ -182,7 +181,7 @@ considered to be part of the key or the value.
 ```
 use_relative_paths=true
 address=0.0.0.0
-enable_auth=true
+require_auth=true
 username=luser
 password=p455w0rd
 rsa_private_key_file=rsa_key.pem
